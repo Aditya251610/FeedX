@@ -9,15 +9,13 @@ import { INewUser } from '../../types'
 
 export const useCreateUserAccountMutation = () => {
     return useMutation({
-        mutationFn: (user: INewUser) => createUserAccount(user)
-    })
-}
-
-export const useSignInAccountMutation = () => {
+      mutationFn: (user: INewUser) => createUserAccount(user),
+    });
+  };
+  
+  export const useSignInAccountMutation = () => {
     return useMutation({
-        mutationFn: (user: {
-            email: string;
-            password: string;
-        }) => signInAccount(user)
-    })
-}
+      mutationFn: (user: { email: string; password: string }) =>
+        signInAccount(user),
+    });
+  };
