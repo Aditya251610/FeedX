@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { IUser } from "../types/index";
@@ -35,6 +35,7 @@ const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current location
   const [user, setUser] = useState<IUser>(INITIAL_USER);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           bio: currentAccount.bio,
         });
         setIsAuthenticated(true);
-
         return true;
       }
 
@@ -67,18 +67,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const cookieFallback = localStorage.getItem("cookieFallback");
-    if (
-      cookieFallback === "[]" ||
-      cookieFallback === null ||
-      cookieFallback === undefined
-    ) {
-      navigate("/sign-in");
-    }
-
-    checkAuthUser();
-  }, []);
-
+    const checkAndRedirect = async () => {
+      const cookieFallback = localStorage.getItem("cookieFallback");
+      if (cookieFallback !== "[]" && cookieFallback !== null && cookieFallback !== undefined) {
+        const loggedIn = await checkAuthUser();
+        if (loggedIn) {
+          // Check if the user is on the sign-up page
+          if (location.pathname !== "/sign-up") {
+            navigate("/");
+          }
+        }
+      } else {
+        // Avoid redirecting from sign-up page to sign-in
+        if (location.pathname !== "/sign-up") {
+          navigate("/sign-in");
+        }
+      }
+    };
+  
+    checkAndRedirect();
+    // Adding an empty dependency array will ensure that this effect runs only once (on mount)
+  }, []); // <-- Add an empty array here
+  
   const value = {
     user,
     setUser,

@@ -7,7 +7,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 
-
 import { SigninValidation } from "../../lib/validation";
 import { useSignInAccountMutation } from "../../lib/react-query/queriesAndMutations";
 import { useUserContext } from "../../context/AuthContext";
@@ -17,7 +16,7 @@ import { useToast } from "../../hooks/use-toast";
 const SigninForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { checkAuthUser, isLoading: isUserLoading } = useUserContext();
+  const { checkAuthUser, isLoading: isUserLoading, isAuthenticated } = useUserContext();
 
   // Query
   const { mutateAsync: signInAccount } = useSignInAccountMutation();
@@ -31,24 +30,32 @@ const SigninForm = () => {
   });
 
   const handleSignin = async (user: z.infer<typeof SigninValidation>) => {
-    const session = await signInAccount(user);
+    try {
+      // Check if the user is already authenticated
+      if (isAuthenticated) {
+        navigate("/");
+        return;
+      }
 
-    if (!session) {
-      toast({ title: "Login failed. Please try again." });
-      
-      return;
-    }
+      // Attempt to sign in
+      const session = await signInAccount(user);
 
-    const isLoggedIn = await checkAuthUser();
+      if (!session) {
+        toast({ title: "Login failed. Please try again." });
+        return;
+      }
 
-    if (isLoggedIn) {
-      form.reset();
+      const isLoggedIn = await checkAuthUser();
 
-      navigate("/");
-    } else {
-      toast({ title: "Login failed. Please try again.", });
-      
-      return;
+      if (isLoggedIn) {
+        form.reset();
+        navigate("/");
+      } else {
+        toast({ title: "Login failed. Please try again." });
+      }
+    } catch (error) {
+      console.error("Error during sign in:", error);
+      toast({ title: "An unexpected error occurred. Please try again." });
     }
   };
 
