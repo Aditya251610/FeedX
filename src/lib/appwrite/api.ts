@@ -1,4 +1,4 @@
-import { ID, ImageGravity, Query } from 'appwrite';
+import { ID, Query } from 'appwrite';
 import { INewPost, INewUser, IUpdatePost, IUpdateUser } from '../../types';
 import { account, appwriteConfig, avatar, databases, storage } from './config';
 
@@ -55,7 +55,7 @@ export async function saveUserToDB(user: {
 // ============================== SIGN IN
 export async function signInAccount(user: { email: string; password: string }) {
   try {
-    const session = await account.createEmailPasswordSession(user.email, user.password);
+    const session = await account.createEmailSession(user.email, user.password);
 
     return session;
   } catch (error) {
@@ -178,7 +178,7 @@ export function getFilePreview(fileId: string) {
       fileId,
       2000,
       2000,
-      ImageGravity.Top,
+      'top',
       100
     );
 
