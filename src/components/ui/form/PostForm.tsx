@@ -19,15 +19,18 @@ import { Models } from "appwrite"
 import { useUserContext } from "../../../context/AuthContext"
 import { useToast } from "../../../hooks/use-toast"
 import { useNavigate } from "react-router-dom"
-import { useCreatePost } from "../../../lib/react-query/queriesAndMutations"
+import { useCreatePost, useUpdatePost } from "../../../lib/react-query/queriesAndMutations"
 
 type PostFormProps = {
     post?: Models.Document;
+    action: 'Create' | 'Update'
 }
 
-const PostForm = ({ post }: PostFormProps) => {
+const PostForm = ({ post, action }: PostFormProps) => {
 
     const { mutateAsync: createPost, isPending: isLoadingCreate } = useCreatePost()
+    const { mutateAsync: updatePost, isPending: isLoadingUpdate } = useUpdatePost()
+
     const { user } = useUserContext()
     const { toast } = useToast();
     const navigate = useNavigate()
@@ -45,6 +48,20 @@ const PostForm = ({ post }: PostFormProps) => {
  
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof PostValidation>) {
+    if(post && action === 'Update'){
+        const updatedPost = await updatePost({
+            ...values,
+            postId: post.$id,
+            imageId: post?.imageId,
+            imageUrl: post?.imageUrl
+        })
+
+        if(!updatedPost){
+            toast({ title: 'Please try again' })
+        }
+
+        return navigate(`/posts/${post.$id}`)
+    }
     const newPost = await createPost({
         ...values,
         userId: user.id,
@@ -58,6 +75,7 @@ const PostForm = ({ post }: PostFormProps) => {
 
     navigate('/')
   }
+
   return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-9 w-full max-w-5xl">
@@ -84,7 +102,7 @@ const PostForm = ({ post }: PostFormProps) => {
                         <FormControl>
                             <FileUploader
                                 fieldChange = {field.onChange}
-                                mediaUrl = {post?.imageUrl}
+                                mediaUrl = {post?.imageURL}
                             />
                         </FormControl>
                         <FormMessage className="shad-form_message" />
@@ -128,7 +146,10 @@ const PostForm = ({ post }: PostFormProps) => {
                         />
                 <div className="flex gap-4 items-center justify-end">
                     <Button type="button" className="shad-button_dark_4">Cancel</Button>
-                    <Button type="submit" className="shad-button_primary">Submit</Button>
+                    <Button type="submit" className="shad-button_primary" disabled={isLoadingCreate || isLoadingUpdate}>
+                        {isLoadingCreate || isLoadingUpdate && 'Loading...'}
+                        {action} Post
+                    </Button>
                 </div>
             </form>
         </Form>
